@@ -1,0 +1,23 @@
+# golangci-lint v2 config. Linters per SDD-034 micro-defaults (2026-05-21).
+# v2 notes: gosimple is folded into staticcheck; gofmt/goimports are formatters.
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - revive
+    - gosec
+    - misspell
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/mlorentedev/iris

@@ -1,0 +1,30 @@
+# Binaries & build output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# Go
+/vendor/
+go.work
+go.work.sum
+
+# Coverage
+coverage.out
+coverage.html
+*.cover
+
+# air hot-reload temp
+/tmp/
+
+# Local env / secrets (real values live in SOPS, never committed)
+.env
+.env.local
+*.secret
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

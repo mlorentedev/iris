@@ -1,0 +1,62 @@
+name: CI
+
+# Built up across SDD-034 tasks. Task 1: pre-commit + golangci-lint config + go mod
+# verify. Later tasks add go build/vet/test (T2), sqlc/migrations (T3), smoke-test
+# (T4), docker-build + OpenAPI drift (T5).
+#
+# Runner routing (ADR-030): self-hosted via vars.RUNNER_DOCKER when set, else
+# ubuntu-latest. Fork PRs are ALWAYS forced to ubuntu-latest — a self-hosted
+# runner has Docker-socket / LAN access, so untrusted fork code must never reach it.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - uses: pre-commit/action@v3.0.1
+
+  golangci-lint:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      # No Go sources yet (Task 1) — `run` errors on an empty module. Validate the
+      # config here; the full `golangci-lint run` lands in Task 2 with the skeleton.
+      - name: Install golangci-lint v2
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+      - name: Verify config
+        run: golangci-lint config verify
+
+  go-mod-verify:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: go mod verify
