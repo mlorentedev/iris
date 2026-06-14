@@ -2,6 +2,9 @@
 
 > Instructions for AI coding agents (Claude Code, Copilot, Cursor, Codex) operating in this repo.
 
+## Documentation
+
+Build/operate docs live in [`docs/`](docs/) (docs-as-code): ADRs in `docs/adr/` (index: [`docs/README.md`](docs/README.md)). Per-feature specs in `specs/`. Cross-project knowledge and session memory live in the maintainer's vault, not this repo.
 
 ## Spec-Driven Development
 
