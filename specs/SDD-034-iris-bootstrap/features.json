@@ -22,7 +22,7 @@
   },
   {
     "id": "sdd-034a-f4-dev-environment",
-    "behavior": "make dev brings up substrate (nats:4223 + worker-hermes stub + motor via air) and make smoke-test passes all 5 checks from bootstrap-contract § 2",
+    "behavior": "make dev brings up substrate (nats:4223 + worker-pi stub + motor via air) and make smoke-test passes all 5 checks from bootstrap-contract § 2",
     "verification": "make install-tools && make dev & sleep 5; make smoke-test; kill %1",
     "state": "pending",
     "evidence": ""
