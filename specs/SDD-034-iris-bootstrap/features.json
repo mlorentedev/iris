@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sdd-034a-f1-repo-plumbing",
+    "behavior": "Repo plumbing complete: LICENSE Apache 2.0 + NOTICE + SPDX pre-commit hook + .gitignore + README + go mod init + .golangci.yml — all present, hooks pass clean",
+    "verification": "pre-commit run --all-files && golangci-lint version && go mod verify",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034a-f2-motor-skeleton",
+    "behavior": "Motor boots: internal/* package stubs + cmd/motor with chi router + /healthz + /readyz + envconfig + slog logfmt + SIGTERM graceful shutdown",
+    "verification": "go build ./... && go vet ./... && ./bin/motor & sleep 1; curl -fsS localhost:8080/healthz && curl -fsS localhost:8080/readyz; kill %1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034a-f3-db-layer",
+    "behavior": "DB layer: sqlc + golang-migrate + initial migration with teams table + at least one sqlc-generated query, migrations applied on motor startup",
+    "verification": "make migrate-up && sqlc generate && go test ./internal/db/... -count=1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034a-f4-dev-environment",
+    "behavior": "make dev brings up substrate (nats:4223 + worker-hermes stub + motor via air) and make smoke-test passes all 5 checks from bootstrap-contract § 2",
+    "verification": "make install-tools && make dev & sleep 5; make smoke-test; kill %1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034a-f5-docker-openapi",
+    "behavior": "Production Dockerfile multi-stage non-root + image builds with local iris:dev tag + loops REGISTRIES make-var (default 'ghcr.io/mlorentedev/iris docker.io/mlorentedev/iris') creating <registry>:<git-sha-short> + <registry>:0.1.0-dev tags. make docker-push pushes to all registries (ghcr login auto via GITHUB_TOKEN; docker.io login via DOCKER_HUB_USERNAME+DOCKER_HUB_TOKEN secrets, graceful skip if missing). Binary embeds Version/GitSHA/BuildDate via -ldflags. OpenAPI 3.1 generated from chi routes via huma with no drift vs committed docs/api.yaml.",
+    "verification": "make docker-build && docker run --rm iris:dev /motor --version | grep -qE '^iris 0\\.1\\.0-dev \\(sha=[a-f0-9]{7,} built=[0-9-]{10}T' && make api-docs && git diff --exit-code docs/api.yaml",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034a-f6-ci-pipeline",
+    "behavior": "GitHub Actions workflow .github/workflows/ci.yml corre en push/PR todos los jobs distribuidos por Tasks 1-5: pre-commit + golangci-lint + go mod verify + go build/vet/test + sqlc diff + migrations test + smoke-test containerized + docker build + OpenAPI drift check. Branch protection bloquea merge si CI no verde.",
+    "verification": "test -f .github/workflows/ci.yml && yq -e '.jobs | keys | length >= 5' .github/workflows/ci.yml && gh workflow view ci.yml --repo mlorentedev/iris 2>/dev/null || echo 'remote pending'",
+    "state": "pending",
+    "evidence": ""
+  }
+]
