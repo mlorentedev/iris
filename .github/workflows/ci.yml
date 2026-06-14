@@ -3,6 +3,10 @@ name: CI
 # Built up across SDD-034 tasks. Task 1: pre-commit + golangci-lint config + go mod
 # verify. Later tasks add go build/vet/test (T2), sqlc/migrations (T3), smoke-test
 # (T4), docker-build + OpenAPI drift (T5).
+#
+# Runner routing (ADR-030): self-hosted via vars.RUNNER_DOCKER when set, else
+# ubuntu-latest. Fork PRs are ALWAYS forced to ubuntu-latest — a self-hosted
+# runner has Docker-socket / LAN access, so untrusted fork code must never reach it.
 
 on:
   push:
@@ -14,7 +18,10 @@ permissions:
 
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,7 +33,10 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   golangci-lint:
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -40,7 +50,10 @@ jobs:
         run: golangci-lint config verify
 
   go-mod-verify:
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
