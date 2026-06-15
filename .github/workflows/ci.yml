@@ -72,3 +72,36 @@ jobs:
         with:
           go-version: "1.26"
       - run: go mod verify
+
+  # Task 3: the committed sqlc output must equal a fresh `sqlc generate` — guards
+  # against hand-edited generated code and stale types after a query/schema change.
+  sqlc-diff:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: make sqlc-diff
+
+  # Task 3: migrations must apply, reverse, and re-apply cleanly. The up→down→up
+  # roundtrip proves the down file is a real inverse and that up is idempotent —
+  # a guarantee the in-process unit tests (forward-only) don't make.
+  migrations-test:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - name: up -> down -> up roundtrip
+        run: |
+          make migrate-up
+          make migrate-down
+          make migrate-up

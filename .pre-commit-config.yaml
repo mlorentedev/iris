@@ -14,12 +14,32 @@ repos:
     hooks:
       - id: gitleaks
 
+  # sqlc miscomputes byte/rune offsets around multi-byte characters and silently
+  # emits corrupted SQL constants (exit 0, broken output). Reject non-ASCII in
+  # any .sql file before it can reach codegen. Runs locally and in the CI
+  # pre-commit job, so the footgun is closed in both places.
+  - repo: local
+    hooks:
+      - id: sql-ascii-only
+        name: SQL must be ASCII-only (sqlc corrupts multi-byte offsets)
+        language: system
+        types: [sql]
+        entry: >-
+          bash -c 'rc=0; for f in "$@"; do
+          if LC_ALL=C grep -nP "[^\x09\x20-\x7e]" "$f"; then
+          echo "  -> non-ASCII above in $f"; rc=1; fi; done;
+          test $rc -eq 0 || echo "FIX: replace multi-byte chars (em-dash, section sign) with ASCII"; exit $rc' --
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
       - id: insert-license
         name: insert SPDX license header (Go)
         files: \.go$
+        # sqlc output carries its own "Code generated … DO NOT EDIT" provenance
+        # and is covered by the repo LICENSE. Stamping it would make committed
+        # files diverge from raw `sqlc generate`, breaking the CI drift check.
+        exclude: ^internal/db/sqlc/
         args:
           - --license-filepath=.github/license-header.txt
           - --comment-style=//

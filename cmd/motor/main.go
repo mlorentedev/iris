@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,12 +20,14 @@ import (
 	"github.com/sethvargo/go-envconfig"
 
 	"github.com/mlorentedev/iris/internal/api"
+	"github.com/mlorentedev/iris/internal/db"
 )
 
 // config is the motor's 12-factor environment configuration.
 type config struct {
 	Addr            string        `env:"IRIS_ADDR, default=:8080"`
 	ShutdownTimeout time.Duration `env:"IRIS_SHUTDOWN_TIMEOUT, default=15s"`
+	DBPath          string        `env:"IRIS_DB_PATH, default=iris.db"`
 }
 
 func main() {
@@ -46,9 +49,27 @@ func run() error {
 		return err
 	}
 
+	// Subcommand: `motor migrate up|down`. Applies schema and exits, sharing the
+	// same embedded migrations and DB path as the server boot path so dev
+	// (`make migrate-up`) and prod (auto-migrate below) can never drift.
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		return runMigrate(cfg.DBPath, os.Args[2:])
+	}
+
+	// Server path: apply pending migrations on boot, then open the connection
+	// the HTTP layer shares for its readiness probe.
+	if err := db.Migrate(cfg.DBPath); err != nil {
+		return err
+	}
+	conn, err := db.Open(cfg.DBPath)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = conn.Close() }()
+
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           api.NewRouter(),
+		Handler:           api.NewRouter(conn),
 		ReadHeaderTimeout: 5 * time.Second, // gosec G112: bound slow-header clients
 	}
 
@@ -73,4 +94,28 @@ func run() error {
 		slog.Info("motor stopped cleanly")
 		return nil
 	}
+}
+
+// runMigrate handles `motor migrate up|down`. Direction defaults to up.
+func runMigrate(dbPath string, args []string) error {
+	dir := "up"
+	if len(args) > 0 {
+		dir = args[0]
+	}
+
+	switch dir {
+	case "up":
+		if err := db.Migrate(dbPath); err != nil {
+			return err
+		}
+		slog.Info("migrations applied", "db", dbPath)
+	case "down":
+		if err := db.MigrateDown(dbPath); err != nil {
+			return err
+		}
+		slog.Info("migrations rolled back", "db", dbPath)
+	default:
+		return fmt.Errorf("motor migrate: unknown direction %q (want: up | down)", dir)
+	}
+	return nil
 }
