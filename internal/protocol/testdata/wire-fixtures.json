@@ -1,0 +1,73 @@
+[
+  {
+    "envelope_version": 1,
+    "message_id": "11111111-1111-4111-8111-111111111111",
+    "from": "user",
+    "to": "leader",
+    "type": "user_message",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "payload": { "text": "build me a login page", "command": "chat" },
+    "timestamp": "2026-06-15T00:00:00Z"
+  },
+  {
+    "envelope_version": 1,
+    "message_id": "22222222-2222-4222-8222-222222222222",
+    "from": "leader",
+    "to": "user",
+    "type": "leader_response",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "ref_message_id": "11111111-1111-4111-8111-111111111111",
+    "payload": { "text": "On it.", "finish_reason": "stop" },
+    "timestamp": "2026-06-15T00:00:01Z"
+  },
+  {
+    "envelope_version": 1,
+    "message_id": "33333333-3333-4333-8333-333333333333",
+    "from": "system",
+    "to": "code-writer",
+    "type": "system_command",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "payload": { "command": "reload_skills", "args": ["frontend"] },
+    "timestamp": "2026-06-15T00:00:02Z"
+  },
+  {
+    "envelope_version": 1,
+    "message_id": "44444444-4444-4444-8444-444444444444",
+    "from": "code-writer",
+    "to": "*",
+    "type": "activity_event",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "payload": { "event": "tool_call_started", "target": "write_file", "summary": "writing login.tsx" },
+    "timestamp": "2026-06-15T00:00:03Z"
+  },
+  {
+    "envelope_version": 1,
+    "message_id": "55555555-5555-4555-8555-555555555555",
+    "from": "code-writer",
+    "to": "system",
+    "type": "container_validation",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "payload": { "status": "ready", "checks": ["nats", "workdir"] },
+    "timestamp": "2026-06-15T00:00:04Z"
+  },
+  {
+    "envelope_version": 1,
+    "message_id": "66666666-6666-4666-8666-666666666666",
+    "from": "code-writer",
+    "to": "system",
+    "type": "skill_status",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "payload": { "skill": "frontend", "status": "loaded" },
+    "timestamp": "2026-06-15T00:00:05Z"
+  },
+  {
+    "envelope_version": 1,
+    "message_id": "77777777-7777-4777-8777-777777777777",
+    "from": "code-writer",
+    "to": "system",
+    "type": "mcp_status",
+    "context": { "thread_id": "t-001", "team_id": "acme" },
+    "payload": { "server": "drawio", "status": "connected" },
+    "timestamp": "2026-06-15T00:00:06Z"
+  }
+]
