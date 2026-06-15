@@ -10,15 +10,49 @@
 IRIS_DB_PATH ?= iris.db
 export IRIS_DB_PATH
 
-# sqlc is a prebuilt-binary build tool, deliberately kept OUT of go.mod (a
-# `go tool` directive would merge sqlc's whole dependency tree into the runtime
-# module). SQLC_VERSION is the single declared pin: CI provisions this exact
-# version via sqlc-dev/setup-sqlc, and `make install-tools` (Task 4) will land
-# it locally. Override SQLC to point at a non-PATH binary if needed.
-SQLC_VERSION ?= 1.31.1
-SQLC ?= sqlc
+# `make install-tools` lands pinned tool binaries in ./bin; put it first on PATH
+# so every target resolves the pinned sqlc/nats/tailwindcss/air over any global.
+export PATH := $(CURDIR)/bin:$(PATH)
+
+# Pinned dev-tool versions (single source of truth, consumed by
+# scripts/install-tools.sh). Build tools, deliberately kept OUT of go.mod so
+# their dependency trees never leak into the runtime module. Keep SQLC_VERSION
+# in sync with the sqlc-dev/setup-sqlc step in .github/workflows/ci.yml.
+SQLC_VERSION     ?= 1.31.1
+NATS_VERSION     ?= 0.4.0
+TAILWIND_VERSION ?= 3.4.19
+AIR_VERSION      ?= 1.65.3
+SQLC             ?= sqlc
 
 .DEFAULT_GOAL := help
+
+# --- Dev environment ---------------------------------------------------------
+.PHONY: install-tools
+install-tools: ## Download pinned dev tools (sqlc, nats, tailwindcss, air) into ./bin
+	SQLC_VERSION=$(SQLC_VERSION) NATS_VERSION=$(NATS_VERSION) \
+	TAILWIND_VERSION=$(TAILWIND_VERSION) AIR_VERSION=$(AIR_VERSION) \
+	./scripts/install-tools.sh
+
+.PHONY: dev
+dev: ## Bring up the substrate (NATS + worker) and run the motor via air hot-reload
+	@command -v air >/dev/null 2>&1 || { \
+		echo "ERROR: air not found on PATH"; \
+		echo "  WHY: the motor hot-reload loop needs air"; \
+		echo "  FIX: run 'make install-tools'"; exit 1; }
+	docker compose -f compose.dev.yml up -d --wait
+	air -c .air.toml
+
+.PHONY: dev-down
+dev-down: ## Stop and remove the dev substrate containers
+	docker compose -f compose.dev.yml down
+
+.PHONY: smoke-test
+smoke-test: ## Run the 5 substrate checks (needs 'make dev' running)
+	@command -v nats >/dev/null 2>&1 || { \
+		echo "ERROR: nats CLI not found on PATH"; \
+		echo "  WHY: smoke-test checks 3 and 5 use the nats CLI"; \
+		echo "  FIX: run 'make install-tools'"; exit 1; }
+	./scripts/smoke-test.sh
 
 # --- Database ----------------------------------------------------------------
 .PHONY: migrate-up

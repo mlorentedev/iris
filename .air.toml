@@ -1,0 +1,24 @@
+# air hot-reload config (https://github.com/air-verse/air). Rebuilds and restarts
+# the motor on .go / template changes. Motor env (IRIS_ADDR, IRIS_DB_PATH, ...)
+# is inherited from the `make dev` shell. Templates land with the HTMX console
+# (SDD-034e); the include_ext list is ready for them.
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/motor ./cmd/motor"
+  bin = "./tmp/motor"
+  include_ext = ["go", "tmpl", "tpl", "html"]
+  exclude_dir = ["tmp", "bin", "dist", "vendor", "internal/db/sqlc", "specs", "docs", ".git", ".github"]
+  exclude_regex = ['_test\.go']
+  delay = 500
+  stop_on_error = true
+  # air signals the motor on rebuild; the motor drains gracefully on SIGINT.
+  send_interrupt = true
+  kill_delay = "2s"
+
+[misc]
+  clean_on_exit = true
+
+[log]
+  time = true

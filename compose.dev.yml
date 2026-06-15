@@ -1,0 +1,39 @@
+# iris dev substrate (per bootstrap-contract section 1). Motor runs natively via
+# `air` for fast iteration; only NATS and the worker run in containers.
+name: iris-dev
+
+services:
+  nats:
+    image: nats:2.10-alpine
+    # JetStream on; HTTP monitoring on :8222 backs the healthcheck. The client
+    # port is published on host :4223 (NOT the default :4222) so it never clashes
+    # with a kubelab NATS, per bootstrap-contract section 1.
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4223:4222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8222/healthz"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 1s
+
+  worker-pi-stub:
+    # Placeholder for the pi worker (the real worker lands in SDD-034d). For the
+    # bootstrap it only has to be a running container so the smoke-test substrate
+    # check (worker present) passes. It waits for NATS to be healthy first.
+    image: alpine:3.20
+    command:
+      - sh
+      - -c
+      - |
+        echo "worker-pi-stub up (real worker: SDD-034d)"
+        exec tail -f /dev/null
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
