@@ -26,7 +26,7 @@ created: "2026-05-17"
 
 - [x] **Task 4: Dev environment** (`features.json` id: `sdd-034a-f4-dev-environment`) — Makefile (`dev/install-tools/smoke-test/docker-build/api-docs`) + `.air.toml` + `compose.dev.yml` (`nats:4223` + `worker-pi` stub) + smoke-test script implementing 5 checks. Verification: `make install-tools && make dev & sleep 5; make smoke-test; kill %1`. _(docker-build/api-docs land in Task 5; smoke check 2 asserts db:ok until NATS client in SDD-034b.)_
 
-- [ ] **Task 5: Production Dockerfile + OpenAPI + version embedding** (`features.json` id: `sdd-034a-f5-docker-openapi`) — multi-stage Dockerfile (golang:1.26-alpine build → distroless/static:nonroot) + `make docker-build` produces **3 simultaneous tags** (`iris:dev` + `iris:<git-sha-short>` + `iris:0.1.0-dev`) + binary embeds `Version`/`GitSHA`/`BuildDate` via `-ldflags "-X main.version=... -X main.gitSHA=... -X main.buildDate=..."` + **huma** integration generating `docs/api.yaml` (decided 2026-05-21 over swaggo per type-safe handlers preference) + CI drift check. Verification: `make docker-build && docker run --rm iris:dev /motor --version | grep -qE '^iris 0\.1\.0-dev \(sha=[a-f0-9]{7,} built=[0-9-]{10}T' && make api-docs && git diff --exit-code docs/api.yaml`. **Soporta SDD-034g downstream sin invadir su scope** (Helm/GitOps/secrets viven en SDD-034g, no aquí).
+- [x] **Task 5: Production Dockerfile + OpenAPI + version embedding** (`features.json` id: `sdd-034a-f5-docker-openapi`) — multi-stage Dockerfile (golang:1.26-alpine build → distroless/static:nonroot) + `make docker-build` produces **3 simultaneous tags** (`iris:dev` + `iris:<git-sha-short>` + `iris:0.1.0-dev`) + binary embeds `Version`/`GitSHA`/`BuildDate` via `-ldflags "-X main.version=... -X main.gitSHA=... -X main.buildDate=..."` + **huma** integration generating `docs/api.yaml` (decided 2026-05-21 over swaggo per type-safe handlers preference) + CI drift check. Verification: `make docker-build && docker run --rm iris:dev /motor --version | grep -qE '^iris 0\.1\.0-dev \(sha=[a-f0-9]{7,} built=[0-9-]{10}T' && make api-docs && git diff --exit-code docs/api.yaml`. **Soporta SDD-034g downstream sin invadir su scope** (Helm/GitOps/secrets viven en SDD-034g, no aquí).
 
 **Ordering rationale:** 1→2 (SPDX hooks before any real code), 2→3 (motor boots without DB), 3→4 (`make dev` needs migrations on startup), 4→5 (Dockerfile needs binary + make targets exist). 5 closes K8s-readiness — SDD-034g consumes Dockerfile + OpenAPI as its deploy inputs.
 
@@ -41,14 +41,15 @@ created: "2026-05-17"
 
 ## Closing
 
-- [ ] Every acceptance criterion from `proposal.md` is covered by at least one test
-- [ ] Every acceptance criterion has a matching entry in `features.json` with a non-vacuous verification command (per pattern-feature-list-as-primitive)
-- [ ] Bootstrap-contract acceptance signal verified: peer + clean machine + this doc → passing smoke test
-- [ ] Type checks pass (`go vet`, `golangci-lint`)
-- [ ] Lint passes
-- [ ] No unrelated changes in the diff (no scope creep)
-- [ ] `verification.md` filled in
-- [ ] PR opened referencing this spec folder
+- [x] Every acceptance criterion from `proposal.md` is covered by at least one test
+- [x] Every acceptance criterion has a matching entry in `features.json` with a non-vacuous verification command (per pattern-feature-list-as-primitive)
+- [x] Bootstrap-contract acceptance signal verified: peer + clean machine + this doc → passing smoke test
+- [x] Type checks pass (`go vet`, `golangci-lint`)
+- [x] Lint passes
+- [x] No unrelated changes in the diff (no scope creep)
+- [x] `verification.md` filled in
+- [x] PR opened referencing this spec folder
+- [ ] `features.json` flipped to `state: passing` by the harness (agent cannot; deferred to harness/maintainer)
 
 ## Machine-readable features
 

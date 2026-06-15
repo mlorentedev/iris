@@ -23,6 +23,21 @@ import (
 	"github.com/mlorentedev/iris/internal/db"
 )
 
+// Build metadata, injected at link time via
+// -ldflags "-X main.version=... -X main.gitSHA=... -X main.buildDate=...".
+// The defaults apply to a plain `go build` / `go run` (no ldflags).
+var (
+	version   = "0.0.0-dev"
+	gitSHA    = "unknown"
+	buildDate = "unknown"
+)
+
+// versionString renders the build triplet, e.g.
+// "iris 0.1.0-dev (sha=abc1234 built=2026-06-14T19:00:00Z)".
+func versionString() string {
+	return fmt.Sprintf("iris %s (sha=%s built=%s)", version, gitSHA, buildDate)
+}
+
 // config is the motor's 12-factor environment configuration.
 type config struct {
 	Addr            string        `env:"IRIS_ADDR, default=:8080"`
@@ -41,6 +56,24 @@ func main() {
 
 // run wires config, the HTTP server, and graceful shutdown on SIGINT/SIGTERM.
 func run() error {
+	// `motor --version` prints the build triplet and exits — handled before any
+	// setup so it works without env or a database (e.g. in the Docker image).
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "version") {
+		fmt.Println(versionString())
+		return nil
+	}
+
+	// `motor openapi` prints the OpenAPI 3.1 spec to stdout (used by
+	// `make api-docs`). No env or database needed.
+	if len(os.Args) > 1 && os.Args[1] == "openapi" {
+		spec, err := api.OpenAPIYAML()
+		if err != nil {
+			return err
+		}
+		fmt.Print(string(spec))
+		return nil
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -67,9 +100,10 @@ func run() error {
 	}
 	defer func() { _ = conn.Close() }()
 
+	handler, _ := api.New(conn)
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           api.NewRouter(conn),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second, // gosec G112: bound slow-header clients
 	}
 

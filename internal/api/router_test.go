@@ -36,7 +36,8 @@ func TestHealthEndpoints(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			srv := httptest.NewServer(api.NewRouter(fakePinger{err: tc.ping}))
+			handler, _ := api.New(fakePinger{err: tc.ping})
+			srv := httptest.NewServer(handler)
 			defer srv.Close()
 
 			resp, err := http.Get(srv.URL + tc.path)

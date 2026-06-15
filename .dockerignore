@@ -1,0 +1,21 @@
+# Keep the build context to Go source + module files. Everything below is
+# either large (bin/ holds ~130MB of downloaded tools), irrelevant to the
+# compile, or local scratch.
+.git
+.github
+/bin
+/tmp
+/dist
+/docs
+/specs
+/scripts
+*.db
+*.db-wal
+*.db-shm
+*.md
+.air.toml
+compose.dev.yml
+.pre-commit-config.yaml
+.golangci.yml
+Dockerfile
+.dockerignore

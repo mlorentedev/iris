@@ -1,72 +1,60 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Manu Lorente
 
-// Package api wires the motor's HTTP surface: a chi router exposing operational
-// endpoints (health) at the root, with the operator API to land under /api/v1
-// in later tasks (per ADR-002).
+// Package api wires the motor's HTTP surface: a chi router fronted by huma,
+// which generates the OpenAPI 3.1 spec from typed operations (per ADR-002 +
+// bootstrap-contract section 3). huma also serves /openapi.yaml, /docs and
+// /schemas. The operator API lands under /api/v1 in later tasks.
 package api
 
 import (
 	"context"
-	"encoding/json"
-	"log/slog"
 	"net/http"
-	"time"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// pinger is the slice of *sql.DB that the readiness probe needs. Depending on an
+// apiVersion is the OpenAPI document version. It describes the API contract, is
+// independent of the binary build version, and is held constant so `make
+// api-docs` is deterministic (no drift between local and CI).
+const apiVersion = "0.1.0-dev"
+
+// Pinger is the slice of *sql.DB the readiness probe needs. Depending on an
 // interface (not the concrete handle) keeps package api decoupled from package
 // db and lets tests inject a healthy or failing backend without a real socket.
-type pinger interface {
+type Pinger interface {
 	PingContext(ctx context.Context) error
 }
 
-// NewRouter builds the motor's HTTP handler. db backs the readiness probe.
-func NewRouter(db pinger) http.Handler {
+// New builds the motor's HTTP handler and the huma API that documents it. db
+// backs the readiness probe.
+func New(db Pinger) (http.Handler, huma.API) {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 
-	// Operational probes (Kubernetes liveness/readiness). No /api/v1 prefix —
-	// these are infrastructure endpoints, not the operator API.
-	r.Get("/healthz", handleHealthz)
-	r.Get("/readyz", handleReadyz(db))
+	config := huma.DefaultConfig("iris motor", apiVersion)
+	// DefaultConfig injects a $schema link field into every response body. The
+	// operational probes have an exact, frozen body contract ({"status":"ok"} /
+	// {"db":"ok"}), so drop the transformer.
+	config.Transformers = nil
+	api := humachi.New(r, config)
 
-	return r
+	registerHealth(api, db)
+	return r, api
 }
 
-// handleHealthz is the liveness probe: the process is up and serving. It must
-// stay dependency-free — a liveness failure tells Kubernetes to restart the
-// pod, which would never fix a downstream (DB/NATS) outage.
-func handleHealthz(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+// OpenAPIYAML returns the motor's OpenAPI 3.1 spec as YAML, for `motor openapi`
+// / `make api-docs`. Handlers are never invoked during generation, so a noop
+// pinger suffices.
+func OpenAPIYAML() ([]byte, error) {
+	_, api := New(noopPinger{})
+	return api.OpenAPI().YAML()
 }
 
-// handleReadyz is the readiness probe: serves 200 {"db":"ok"} only while the
-// database answers a ping, else 503 {"db":"down"} so Kubernetes pulls the pod
-// from rotation until its dependencies recover. NATS will add its own key here
-// in SDD-034b; the readyz body grows one dependency at a time as they land.
-func handleReadyz(db pinger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-		defer cancel()
+type noopPinger struct{}
 
-		if err := db.PingContext(ctx); err != nil {
-			slog.Warn("readiness check failed", "dep", "db", "err", err)
-			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"db": "down"})
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]string{"db": "ok"})
-	}
-}
-
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		slog.Error("failed to encode JSON response", "err", err)
-	}
-}
+func (noopPinger) PingContext(context.Context) error { return nil }
