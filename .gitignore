@@ -18,6 +18,12 @@ coverage.html
 # air hot-reload temp
 /tmp/
 
+# Local SQLite databases (v0 dev/test scratch — schema lives in migrations,
+# never in a committed .db file). WAL/SHM are runtime sidecars.
+*.db
+*.db-wal
+*.db-shm
+
 # Local env / secrets (real values live in SOPS, never committed)
 .env
 .env.local

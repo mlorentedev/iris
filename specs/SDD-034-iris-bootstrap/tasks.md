@@ -22,7 +22,7 @@ created: "2026-05-17"
 
 - [ ] **Task 2: Motor skeleton** (`features.json` id: `sdd-034a-f2-motor-skeleton`) — `internal/{api,scheduler,runtime,protocol,post-actions,console,db}/` stubs + `cmd/motor/main.go` with chi router + `/healthz` + `/readyz` + envconfig + slog logfmt + SIGTERM graceful shutdown. Verification: `go build ./... && go vet ./... && ./bin/motor & sleep 1; curl -fsS localhost:8080/healthz && curl -fsS localhost:8080/readyz; kill %1`.
 
-- [ ] **Task 3: DB layer** (`features.json` id: `sdd-034a-f3-db-layer`) — `sqlc.yaml` + `migrations/0001_init.{up,down}.sql` minimal `teams` table + `queries/teams.sql` + sqlc generate + golang-migrate on motor startup. Verification: `make migrate-up && sqlc generate && go test ./internal/db/... -count=1`.
+- [x] **Task 3: DB layer** (`features.json` id: `sdd-034a-f3-db-layer`) — `sqlc.yaml` + `migrations/0001_init.{up,down}.sql` minimal `teams` table + `queries/teams.sql` + sqlc generate + golang-migrate on motor startup. Verification: `make migrate-up && sqlc generate && go test ./internal/db/... -count=1`.
 
 - [ ] **Task 4: Dev environment** (`features.json` id: `sdd-034a-f4-dev-environment`) — Makefile (`dev/install-tools/smoke-test/docker-build/api-docs`) + `.air.toml` + `compose.dev.yml` (`nats:4223` + `worker-pi` stub) + smoke-test script implementing 5 checks. Verification: `make install-tools && make dev & sleep 5; make smoke-test; kill %1`.
 
