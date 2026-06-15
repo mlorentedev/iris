@@ -110,3 +110,32 @@ jobs:
           make migrate-up
           make migrate-down
           make migrate-up
+
+  # Task 4: the dev substrate (NATS + worker-pi-stub) plus the motor must pass
+  # the 5-check smoke-test end to end. The motor runs directly here (air
+  # hot-reload is a dev-only concern); the substrate and smoke-test script are
+  # the same artifacts used locally.
+  smoke-test:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - name: Install pinned tools (nats CLI for the smoke checks)
+        run: make install-tools
+      - name: Bring up substrate
+        run: docker compose -f compose.dev.yml up -d --wait
+      - name: Start motor and run smoke-test
+        run: |
+          go build -o ./tmp/motor ./cmd/motor
+          ./tmp/motor & MOTOR=$!
+          for _ in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null 2>&1 && break; sleep 1; done
+          make smoke-test
+          kill "$MOTOR" 2>/dev/null || true
+      - name: Teardown substrate
+        if: always()
+        run: docker compose -f compose.dev.yml down
