@@ -24,6 +24,16 @@ TAILWIND_VERSION ?= 3.4.19
 AIR_VERSION      ?= 1.65.3
 SQLC             ?= sqlc
 
+# Container build metadata + tagging. VERSION is the semver pre-release tag;
+# GIT_SHA is the immutable identity for GitOps. REGISTRIES is space-separated;
+# `docker-build` tags every registry, `docker-push` pushes to those it can log
+# into (graceful skip otherwise).
+VERSION     ?= 0.1.0-dev
+GIT_SHA     := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+BUILD_DATE  := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+IMAGE_LOCAL ?= iris:dev
+REGISTRIES  ?= ghcr.io/mlorentedev/iris docker.io/mlorentedev/iris
+
 .DEFAULT_GOAL := help
 
 # --- Dev environment ---------------------------------------------------------
@@ -70,6 +80,32 @@ generate: ## Regenerate sqlc typed queries from SQL
 .PHONY: sqlc-diff
 sqlc-diff: generate ## Fail if committed sqlc output drifts from a fresh generate
 	git diff --exit-code internal/db/sqlc
+
+# --- API docs ----------------------------------------------------------------
+.PHONY: api-docs
+api-docs: ## Regenerate docs/api.yaml (OpenAPI 3.1) from the huma routes
+	@mkdir -p docs
+	go run ./cmd/motor openapi > docs/api.yaml
+
+.PHONY: api-docs-diff
+api-docs-diff: api-docs ## Fail if committed docs/api.yaml drifts from a fresh generate
+	git diff --exit-code docs/api.yaml
+
+# --- Container ---------------------------------------------------------------
+.PHONY: docker-build
+docker-build: ## Build the image, tagging $(IMAGE_LOCAL) + <registry>:{sha,version}
+	docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_SHA=$(GIT_SHA) \
+		--build-arg BUILD_DATE=$(BUILD_DATE) \
+		-t $(IMAGE_LOCAL) \
+		$(foreach r,$(REGISTRIES),-t $(r):$(GIT_SHA) -t $(r):$(VERSION)) \
+		.
+
+.PHONY: docker-push
+docker-push: ## Push per-registry tags (logs in per registry; skips those without secrets)
+	VERSION=$(VERSION) GIT_SHA=$(GIT_SHA) REGISTRIES="$(REGISTRIES)" \
+	./scripts/docker-push.sh
 
 # --- Meta --------------------------------------------------------------------
 .PHONY: help

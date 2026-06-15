@@ -139,3 +139,37 @@ jobs:
       - name: Teardown substrate
         if: always()
         run: docker compose -f compose.dev.yml down
+
+  # Task 5: docs/api.yaml must equal a fresh `make api-docs` — keeps the
+  # committed OpenAPI in lockstep with the huma routes.
+  openapi-drift-check:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: make api-docs-diff
+
+  # Task 5: the production image must build (multi-stage, distroless, non-root).
+  # v0 builds only -- no push (Docker Hub secrets are added post-merge); the
+  # version triplet is asserted from the built binary.
+  docker-build:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build image
+        run: make docker-build
+      - name: Assert version triplet is embedded
+        # iris:dev matches the Makefile IMAGE_LOCAL default.
+        run: |
+          docker run --rm iris:dev /motor --version \
+            | grep -qE '^iris 0\.1\.0-dev \(sha=[a-f0-9]{7,} built=[0-9-]{10}T'
