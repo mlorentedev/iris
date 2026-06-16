@@ -64,7 +64,7 @@ Repo plumbing soporte: LICENSE Apache 2.0 + NOTICE + SPDX pre-commit hook + .git
 - Vault: `10_projects/iris/11-tasks.md` (backlog entry SDD-034a)
 - ADR: [adr-002-orchestrator-architecture](../../docs/adr/adr-002-orchestrator-architecture.md) (canonical architecture — was kubelab/adr-038, renumbered 2026-05-19)
 - ADR: [adr-003-license-apache-2](../../docs/adr/adr-003-license-apache-2.md) (license decision — was kubelab/adr-040)
-- ADR: [adr-004-positioning](../../docs/adr/adr-004-positioning.md) (FDE-grade EU platform teams Series A-C K8s on-prem) — 2026-05-21
+- Positioning: lives in the vault strategy reports (not in the repo) — 2026-05-21
 - ADR: [adr-005-architectural-boundary](../../docs/adr/adr-005-architectural-boundary.md) (vault-as-SSOT + CORE/EDGE + Combo 8 + DP-1..5 + EQ-1 + métricas) — 2026-05-21
 - OQ-1 spike: ADOPT `kubernetes-sigs/agent-sandbox` as K8s runtime substrate (consumed by SDD-034c, not SDD-034a) — 2026-05-21
 - Convention origin: kubelab/10-roadmap § Stream C: Repo Separation

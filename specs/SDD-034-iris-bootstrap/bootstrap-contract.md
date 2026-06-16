@@ -176,5 +176,5 @@ A peer with a clean machine can:
 - Architecture ADR: [adr-002-orchestrator-architecture](../../docs/adr/adr-002-orchestrator-architecture.md) (renumbered from kubelab/adr-038 on 2026-05-19)
 - License ADR: [adr-003-license-apache-2](../../docs/adr/adr-003-license-apache-2.md) (renumbered from kubelab/adr-040 on 2026-05-19)
 - Frontend ADR: [adr-001-frontend-htmx-go](../../docs/adr/adr-001-frontend-htmx-go.md) (renumbered from kubelab/adr-035 on 2026-05-19)
-- Positioning ADR (added 2026-05-21): [adr-004-positioning](../../docs/adr/adr-004-positioning.md)
+- Positioning: vault strategy reports (not in the repo, added 2026-05-21)
 - Architectural boundary ADR (added 2026-05-21): [adr-005-architectural-boundary](../../docs/adr/adr-005-architectural-boundary.md)

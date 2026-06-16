@@ -37,13 +37,12 @@ What this ADR does NOT cover:
 - **OpenCode** — separate project, separate license
 - **Claude Code CLI** — Manu's personal professional dev tool (used to develop iris), NOT a runtime iris manages, NOT bundled
 - **Ollama** — separate project, separate license
-- **agent_crew (helmcode)** — third-party competitor and prior-art reference, AGPL-3.0 (its license matters only as a code-copy constraint on us — see "Why NOT AGPL" below)
 
 ## Context
 
-The license question surfaced as a flagged blocker during SDD-026 (agent_crew code analysis) on 2026-05-16. AgentCrew (the closest prior-art) is AGPL-3.0, which initially looked like it should constrain iris's positioning. After scope clarification (D18 — see orchestrator-terminology), the AGPL competitive-positioning angle collapsed: iris is not a SaaS open-core product, so AGPL's network-use trigger and the "more permissive alternative" market angle are both irrelevant.
+The license question surfaced during the orchestrator pivot (D18 scope clarification — see orchestrator-terminology): iris is for freelance + corporate consultoría delivery, not SaaS multi-tenant open-core. That scope decides the license.
 
-What remains relevant about license: (1) whether code from AGPL competitors can be copied into iris (it cannot, under Apache or any non-AGPL license — iris must be written fresh using only architectural patterns); (2) whether consultoría client deliverables can be kept proprietary or modified privately without redistribution obligations (yes, under Apache).
+What remains relevant about license: (1) iris must not incorporate genuinely third-party copyleft (AGPL/GPL/SSPL) source, which would cascade its obligations onto the whole iris codebase; (2) whether consultoría client deliverables can be kept proprietary or modified privately without redistribution obligations (yes, under Apache).
 
 ## Options considered
 
@@ -69,20 +68,11 @@ Both are permissive and both meet the consultoría requirements. Apache 2.0 was 
 
 3. **Same defaults as Kubernetes, Terraform, Hadoop, Spark.** iris's positioning ("self-hosted, K8s-aligned, infra-grade") inherits credibility by matching the license of the infra it sits alongside.
 
-## Why NOT AGPL (corrected framing)
+## Why NOT AGPL
 
-The earlier draft of this section overstated AGPL's reach in ways that don't match AGPL §13's actual mechanics. Corrected:
+**What AGPL requires** (per §13): a modified version of AGPL-licensed software, when made available to users over a network, must offer those users access to the corresponding source code. The trigger is **modifying AGPL-licensed code AND offering it over a network**.
 
-**What AGPL actually requires** (per §13): a modified version of AGPL-licensed software, when made available to users over a network, must offer those users access to the corresponding source code. The trigger is **modifying AGPL-licensed code AND offering it over a network**.
-
-**What AGPL does NOT require** (common misconceptions):
-- Interoperating with AGPL software over HTTP does NOT make your software AGPL-derivative. iris can call agent_crew (or anything else AGPL) via HTTP without inheriting AGPL.
-- Running AGPL software alongside non-AGPL software in the same environment does NOT cross-contaminate.
-- Customising your OWN Apache-licensed code for a client does NOT trigger any AGPL obligation.
-
-**The real reason iris is not AGPL:** if we incorporated AGPL source code (from agent_crew or anywhere else) into iris, the entire iris codebase that touches it would have to be released under AGPL. iris would then ALSO be subject to the §13 network-use trigger. This conflicts with (a) shipping client deliverables that the client can modify privately, and (b) the practical reality that consultoría clients sometimes have policies against AGPL components.
-
-**Conclusion:** the right framing is "iris cannot incorporate AGPL source code". We extract architectural patterns from agent_crew (ideas and APIs are not copyrightable per Oracle v Google 2021) and re-implement them fresh under Apache 2.0. See agent-crew-analysis and [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md) for how this was done.
+**The real reason iris is not AGPL:** if iris incorporated genuinely third-party AGPL source code, the entire iris codebase that touches it would have to be released under AGPL, and iris would also be subject to the §13 network-use trigger. This conflicts with (a) shipping client deliverables that the client can modify privately, and (b) the practical reality that consultoría clients sometimes have policies against AGPL components. Hence iris must not incorporate third-party AGPL/GPL/SSPL source — enforced by the CI license gate below.
 
 ## Why NOT dual-license (yet)
 
@@ -97,7 +87,7 @@ Dual-licensing (Apache for community + commercial license for Pro tier) is the t
 
 **Positive:**
 - iris can be deployed by anyone for any use without legal review.
-- Code from AGPL projects (notably agent_crew) explicitly **cannot** be copied into iris. Architectural patterns can be extracted with attribution (done in SDD-033 + [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md)), but no source code.
+- Genuinely third-party copyleft (AGPL/GPL/SSPL) source **cannot** be copied into iris — enforced by the CI license gate.
 - Consultoría clients receive deliverables they can modify and operate without source-disclosure obligation.
 - Patent grant protects iris and its ecosystem.
 

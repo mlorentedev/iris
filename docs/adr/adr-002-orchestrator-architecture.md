@@ -84,7 +84,7 @@ What this ADR does NOT cover:
 Today is 2026-05-16, the close of a multi-session reflection sprint that produced (in chronological order):
 1. **The pivot decision** (2026-05-15, brainstorm): `ai-workloads-starter` reframes as a multi-agent orchestration platform (`iris`), blocking the existing kubelab roadmap.
 2. **Scope clarification (D18, 2026-05-16):** target is freelance + corporate consultoría delivery, NOT SaaS open-core. See orchestrator-terminology.
-3. **Prior-art analysis (agent-crew-analysis, 2026-05-16):** AgentCrew (helmcode/agent_crew) is the closest production-grade equivalent. Same wedge. Same substrate split. AGPL-3.0. Direct competitor, NOT just inspiration.
+3. **Prior-art analysis (agent-crew-analysis, 2026-05-16):** our own prior project agent_crew is the closest production-grade equivalent — same wedge, same substrate split. Its architecture and code are first-party and reusable in iris.
 4. **License decision ([adr-003-license-apache-2](./adr-003-license-apache-2.md)):** Apache 2.0. Patterns extractable from AgentCrew with attribution; code is NOT.
 5. **Four extracted patterns:** NATS protocol envelope, AgentRuntime + capabilities, team-leader-workers coordination, post-action bindings.
 6. **Frontend decision ([adr-001-frontend-htmx-go](./adr-001-frontend-htmx-go.md)):** HTMX + Go templates. Single binary deploy.
@@ -254,7 +254,7 @@ This is not a forced fit — both designs converge on the same boundaries becaus
 - The architecture is **fully derivable from 4 patterns + 2 ADRs**. A new contributor reads 6 short documents and has the complete picture.
 - **Substrate-agnostic at the protocol layer.** Switching Docker→K8s is a deployment configuration change, not an architecture migration.
 - **Substitutable orchestration strategy.** Leader is a black box; iris can adopt any agent-coordination model (CrewAI-style, LangGraph, custom Hermes loop) without UI or API changes.
-- **AGPL-clean.** All extracted patterns are architectural; no code copied from AgentCrew.
+- **First-party prior art.** agent_crew is our own project; its patterns and code are reusable in iris.
 - **Wedge preserved end-to-end.** Single Go binary for motor + console, one Python worker image, single NATS container per team — operator deploys 2 things, not 7.
 - **n8n integration latent and free.** No code commits needed beyond what's planned; capability available the moment a client asks.
 
