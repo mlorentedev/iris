@@ -11,7 +11,7 @@ tags: [iris, architecture, boundary, vault-ssot, core-edge, substrate, prestudy]
 
 > **Status:** Accepted, 2026-05-21
 > **Closes:** DP-1, DP-2, DP-3, DP-4, DP-5, TQ-1, TQ-3 (via TQ-15), TQ-8, TQ-12, TQ-13, TQ-14, TQ-15, OQ-9, OQ-10, OQ-11, EQ-1 (all from 11-open-questions-tracker)
-> **Depends on:** [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md) (technical foundation), [adr-004-positioning](./adr-004-positioning.md) (business framing it serves)
+> **Depends on:** [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md) (technical foundation). Business positioning lives in the vault strategy reports, not the repo.
 > **Related:** 10-feature-extraction-catalog (13 architectural axes + seed decisions), pattern-dual-memory (evolved into 3-tier knowledge flow), lesson_agentmemory_validation (their pivot = our axiom), orchestrator-terminology
 
 ## Decision
@@ -40,7 +40,7 @@ What this ADR covers:
 What this ADR does NOT cover:
 - Component-level architecture (lives in [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md))
 - Frontend specifics (lives in [adr-001-frontend-htmx-go](./adr-001-frontend-htmx-go.md))
-- Positioning + business model (lives in [adr-004-positioning](./adr-004-positioning.md))
+- Positioning + business model (lives in the vault strategy reports, not the repo)
 - Implementation task breakdown (lives on the bitácora board, SDD-034 stream)
 - Naming final iris (OQ-16, ~2-4 weeks decision)
 - Per-customer vertical pack specs (emerge v0.5+ organically)
@@ -51,7 +51,7 @@ This ADR consolidates 5 discussion points (DP-1..5), 3 substrate questions (TQ-1
 
 The catalyst was the **vault-as-SSOT realization 2026-05-21**: every prior architectural decision had a missing meta-principle. Articulating *"vault is SSOT, all else is regenerable index"* aligned all 5 DP decisions, resolved 3 substrate ambiguities, and made the validation metric (OQ-11) mechanically derivable from `git log`. This ADR is the principle's formal home.
 
-Sibling ADR-004 carries the business positioning that this architecture serves; this ADR carries the architecture that the positioning depends on. The two must read coherently.
+The business positioning this architecture serves lives in the vault (strategy reports); this ADR carries only the architecture.
 
 ---
 
@@ -90,7 +90,7 @@ Sibling ADR-004 carries the business positioning that this architecture serves; 
 
 | Alternative considered | Why rejected |
 |---|---|
-| Postgres as SSOT (iris-native schema) | Vendor-coupling on iris's own DB; customer cannot easily inspect/own/export. Defeats "customer-owned forever" positioning ([adr-004-positioning](./adr-004-positioning.md) M4). |
+| Postgres as SSOT (iris-native schema) | Vendor-coupling on iris's own DB; customer cannot easily inspect/own/export. Defeats the customer-owned-forever principle. |
 | External DB-as-SSOT (Snowflake/BigQuery/etc.) | Cloud-coupling. Violates ICP sovereignty requirement. |
 | swarmvault-managed KB store | Adoption-cost (need iris's wrapper) + competes with iris's identity (DP-3 decided Inspirado, not adopt-as-engine). Vault is simpler + more sovereign. |
 | Hybrid (some artifacts vault, some Postgres) | Boundary becomes fuzzy → "where is decision X stored?" requires checking 2 systems. Single SSOT discipline simplifies operations + customer mental model. |
@@ -109,7 +109,7 @@ If the four Combo 8 agents fire on overlapping triggers (cron + slash + webhook 
 
 **What this rules out:**
 - A worker writing to a checked-out vault on the worker's filesystem (workers are stateless per ADR-002 Component 2).
-- Two motor instances pointing at the same vault (forbidden by deployment topology; one iris per customer per ADR-004 + R6 contractual clause).
+- Two motor instances pointing at the same vault (forbidden by deployment topology; one iris per customer, per the R6 contractual clause).
 - File-level CRDT or git-merge resolution — both add complexity for a problem that single-writer serialization solves trivially in v0.
 
 **Failure mode:** if the writer process dies mid-commit, the next motor restart sees the JetStream WorkQueue with unacked messages; the writer replays them. Idempotency is guaranteed because each draft carries a `MessageID` (envelope) and the writer dedupes by checking `git log --grep="iris-draft-<MessageID>"` before applying. Worst case: a draft commit lands twice with identical content — visible in git log but harmless (HITL gate filters dupes at review time).
@@ -154,7 +154,7 @@ If the four Combo 8 agents fire on overlapping triggers (cron + slash + webhook 
 | **kubernetes-sigs/agent-sandbox** | K8s runtime substrate (Apache 2.0, K8s SIG Apps, 2.3k⭐, v1beta1) | K8s pod lifecycle controller — each iris agent = 1 `Sandbox` CR managed by SIG controller; iris coord client-go wraps CRD | OQ-1 spike 2026-05-21 — podTemplate embeds full corev1.PodSpec; hermes-agent example native in repo; saves ~60% SDD-034c K8s adapter effort |
 | **n8n** | integration target (NOT substrate) | Customer's n8n calls iris via MCP | TQ-10; iris exposes MCP server, n8n is one consumer |
 
-### Out-of-scope for iris (NOT subset, NOT competitor — different problem space)
+### Out-of-scope for iris (different problem space)
 
 Per TQ-8 clarification: NEVER frame these as "iris alternatives":
 - Claude Code, Codex, Cursor — Manu's personal dev tools, OUT of platform scope per orchestrator-terminology
@@ -172,7 +172,7 @@ Per TQ-8: products that occupy the slot iris wants to own. Patterns may be studi
 - kiwiq — multi-tier memory + orchestration (overlaps Ejes 4+5; pattern lessons adopted via DP-5)
 - Letta — memory specialist (overlaps Eje 5)
 - Bedrock/Vertex Agents, CF Claude Managed — managed orchestrators (cloud-locked; iris non-cloud)
-- Glean/Hebbia/Cohere/Mistral/Writer — full Glean-class platforms (different commercial bracket; counter-positioning per [adr-004-positioning](./adr-004-positioning.md))
+- Full enterprise knowledge-platform suites — different commercial bracket and problem space
 
 ### Criterion definitivo (per Manu correction 2026-05-20)
 
@@ -188,7 +188,7 @@ Adopting an external substrate concentrates external dependency risk. The OQ-1 s
 
 1. **Contract pin.** iris pins the agent-sandbox CRD version it depends on in `internal/runtime/k8s/agent_sandbox_version.go` (constant + Go-embed of the CRD schema for offline validation). Bumping the pin requires explicit ADR amendment.
 2. **CI contract test before v0.3.** SDD-034c MUST include an integration test that deploys the pinned `Sandbox` CRD into a kind/k3d cluster and exercises the iris client-go wrapper (create → status → terminate). The test runs on every PR touching `internal/runtime/k8s/`. Without this test, the adoption is theoretical and the next K8s SIG release can break iris invisibly.
-3. **Parallel Docker adapter stays first-class.** ADR-002 Component 4 lists Docker + Kubernetes + local-process. The Docker adapter is NOT a stepping stone for the K8s adapter — it is the primary delivery substrate for v0 consultoría engagements per ADR-004. The K8s adapter is opt-in. If agent-sandbox vanishes, customers on Docker substrate are unaffected.
+3. **Parallel Docker adapter stays first-class.** ADR-002 Component 4 lists Docker + Kubernetes + local-process. The Docker adapter is NOT a stepping stone for the K8s adapter — it is the primary delivery substrate for v0 consultoría engagements. The K8s adapter is opt-in. If agent-sandbox vanishes, customers on Docker substrate are unaffected.
 
 **Re-evaluation triggers (any one fires the ADR amendment process):**
 
@@ -361,7 +361,7 @@ Per TQ-13 (gbrain pattern adoption), every Combo 8 agent's `output_type` MUST sa
 |---|
 | DP-1 deterministic coordinator routes by pattern matching → requires declarative agent contracts |
 | Manu's K8s 20yr background = K8s IS declarative; aligns naturally |
-| Hebbia (F2.1) + Decagon AOPs (F11.1) + MS Copilot Studio (F7.2) + kiwiq (F27.2) all validate declarative pattern in production |
+| Multiple production platforms validate the declarative pattern |
 | Escape hatch (`script_runner` stage) preserves flexibility for edge cases without sacrificing the 90%+ declarative path |
 
 ### Format sketch (full schema lives in SDD-034d implementation)
@@ -575,7 +575,7 @@ If 1+ fails → iterate the failing agent(s) (DP-2 declarative YAML enables fast
 |---|---|
 | **iris-as-KB-engine (no vault dependency)** | Defeats customer-sovereignty positioning. Customer would need iris running to read their own knowledge. |
 | **Single all-purpose agent (vs 4 specialized)** | Loses validation of multi-agent coordinator contract surface. DP-1 deterministic coord becomes theoretical. |
-| **LLM-supervisor coordinator (AWS Bedrock pattern)** | Loses DORA/NIS2 certifiability + bernstein-grade audit trivial property. Counter-position lost. |
+| **LLM-supervisor coordinator (LLM in the coordinator)** | Loses DORA/NIS2 certifiability + the audit-trivial property. |
 | **Imperative agent definitions (code-first)** | Coord cannot route deterministically. DP-1 + DP-2 must align; chose declarative for both. |
 | **kiwiq 4-tier memory (Postgres + Mongo + Weaviate + Redis)** | Over-engineered v0; zero-deps positioning compromised. Expand v0.5+ if needed. |
 | **No audit-chain v0 (full defer)** | Retrofit cost when first cert customer hits is too high. Hooks now, packaging later. |
@@ -585,14 +585,10 @@ If 1+ fails → iterate the failing agent(s) (DP-2 declarative YAML enables fast
 ## Cross-references
 
 - [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md) — technical architecture foundation (components, NATS, runtime adapters)
-- [adr-004-positioning](./adr-004-positioning.md) — business positioning sibling
-- [adr-003-license-apache-2](./adr-003-license-apache-2.md) — license enabling customer-owned customizations (M4 MOAT enabler)
+- [adr-003-license-apache-2](./adr-003-license-apache-2.md) — license enabling customer-owned customizations
 - [adr-001-frontend-htmx-go](./adr-001-frontend-htmx-go.md) — frontend (operator console)
 - 10-feature-extraction-catalog — 13 architectural axes + seed decisions (formalized here)
 - 11-open-questions-tracker — open questions tracker (decisions consolidated here)
-- 12-market-position-product-architecture — market position raw analysis
-- 14-dev-platform-teams-fde-model — FDE economics + dev/platform agent inventory
 - pattern-dual-memory — predecessor pattern (superseded by 3-tier flow § 3)
 - lesson_agentmemory_validation — agentmemory pivot validates vault-as-SSOT axiom
-- orchestrator-terminology — naming conventions (canibalizadores vs substrate)
-- helmcode-nan — thesis lock 2026-05-14
+- orchestrator-terminology — naming conventions
