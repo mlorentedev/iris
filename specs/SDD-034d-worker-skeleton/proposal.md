@@ -1,7 +1,7 @@
 ---
 id: "SDD-034d-worker-skeleton"
 type: spec
-status: draft # draft | implementing | verifying | archived
+status: implementing # draft | implementing | verifying | archived
 created: "2026-06-16"
 issue: "iris#5"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal]
@@ -48,12 +48,12 @@ Failure modes, dependencies, and unknowns to clarify before implementation. If a
 
 Observable outcomes. Each must be testable.
 
-- [ ] **Protocol roundtrip (shared Go package):** a `user_message` envelope published to `team.<team>.worker.<name>` is decoded via `internal/protocol` and dispatched — no mirror. (`internal/worker` test)
-- [ ] **pi driven in a worktree:** the worker spawns `pi --mode json` with `cwd` = an isolated git worktree and a prompt from the envelope, consumes its event stream to `turn_end`/`agent_end`, and **removes the worktree on completion** (no leaked worktrees — item C). (integration test against a **fake-pi** emitting canned JSON events — no real inference)
-- [ ] **Activity emission:** one `activity_event` on `team.<team>.activity` per pi `tool_execution_*` event; `container_validation` on startup. (test subscriber asserts envelopes)
-- [ ] **Graceful shutdown (item A):** on SIGTERM the worker terminates the in-flight pi subprocess and drains within a bounded timeout — no orphaned pi processes. (test sends SIGTERM mid-job, asserts the pi child is reaped)
-- [ ] **pi failure surfaced, not swallowed (item B):** when pi exits non-zero or crashes, the worker emits a failure `activity_event` rather than dropping it silently. (fake-pi exits 1 → test asserts a failure envelope)
-- [ ] **Smoke-test green:** umbrella `make smoke-test` checks #4 (worker-pi running) and #5 (NATS roundtrip) pass with the real binary in `compose.dev.yml`. (`make smoke-test` exit 0)
+- [x] **Protocol roundtrip (shared Go package):** a `user_message` envelope published to `team.<team>.worker.<name>` is decoded via `internal/protocol` and dispatched — no mirror. (`internal/worker` test) — `TestDispatch*`
+- [x] **pi driven in a worktree:** the worker spawns `pi --mode json` with `cwd` = an isolated git worktree and a prompt from the envelope, consumes its event stream to `turn_end`/`agent_end`, and **removes the worktree on completion** (no leaked worktrees — item C). (integration test against a **fake-pi** emitting canned JSON events — no real inference) — `TestDriverStreamsEventsToAgentEnd`, `TestWorktreeLifecycle`, `TestHandleHappyPath`
+- [x] **Activity emission:** one `activity_event` on `team.<team>.activity` per pi `tool_execution_*` event; `container_validation` on startup. (test subscriber asserts envelopes) — `TestActivityFor*`, `TestHandleHappyPath`, `TestEmitStartup`
+- [x] **Graceful shutdown (item A):** on SIGTERM the worker terminates the in-flight pi subprocess and drains within a bounded timeout — no orphaned pi processes. (test sends SIGTERM mid-job, asserts the pi child is reaped) — `TestDriverCancelReapsPi` + `cmd/worker` `signal.NotifyContext`
+- [x] **pi failure surfaced, not swallowed (item B):** when pi exits non-zero or crashes, the worker emits a failure `activity_event` rather than dropping it silently. (fake-pi exits 1 → test asserts a failure envelope) — `TestHandleFailurePath`
+- [x] **Smoke-test green:** umbrella `make smoke-test` checks #4 (worker-pi running) and #5 (NATS roundtrip) pass with the real binary in `compose.dev.yml`. (`make smoke-test` exit 0) — verified locally: `[smoke] 5/5 checks passed`, worker-pi healthy on `iris-worker:dev`
 
 ## References
 

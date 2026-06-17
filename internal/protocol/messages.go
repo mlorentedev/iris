@@ -3,9 +3,10 @@
 
 // Package protocol defines the typed message envelope and subject taxonomy for
 // iris's NATS JetStream bus (per ADR-002 and the candidate-nats-protocol-envelope
-// pattern). The envelope is the FROZEN wire contract between the Go motor and
-// the Python workers; the JSON fixtures in testdata/ are the shared oracle that
-// keeps both implementations from drifting.
+// pattern). The envelope is the FROZEN wire contract between the Go motor and the
+// Go fleet workers (ADR-009); both import this package directly, so the contract
+// is a shared dependency, not a cross-language mirror. The JSON fixtures in
+// testdata/ are golden tests that pin the wire format against accidental drift.
 package protocol
 
 import (

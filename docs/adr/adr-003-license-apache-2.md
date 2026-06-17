@@ -28,7 +28,7 @@ tags: [iris, orchestrator, license, apache, legal]
 
 What this ADR covers:
 - iris's Go motor source code
-- iris's Python workers source code
+- iris's Go fleet worker source code (ADR-009)
 - iris's frontend source code (HTMX + Go templates per [adr-001-frontend-htmx-go](./adr-001-frontend-htmx-go.md))
 - Templates, configurations, deployment manifests shipped as part of iris
 
