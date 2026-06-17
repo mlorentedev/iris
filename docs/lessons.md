@@ -38,3 +38,10 @@
 - **Problem:** pi ships **only via npm** (`npm i -g --ignore-scripts @earendil-works/pi-coding-agent`) — there is **no standalone/compiled binary** (no bun/deno-compile/pkg). So a `distroless/static:nonroot` worker image cannot run pi: it has no Node. The "static binary" advantage cited for Go does **not** carry to the worker's runtime image.
 - **Solution:** the worker image is multi-stage Go-build → **Node base** with pi installed `--ignore-scripts` and **version-pinned**, plus the Go binary copied in. pi upgrades are dependency bumps (pin + test). This Node requirement is identical for any worker language, so it does not change the Go-vs-Python decision — it only means the worker image differs from the motor's distroless image. Recorded in ADR-009; relevant to SDD-034g (deploy).
 - **Tags:** pi, npm, docker-image, distroless, node, worker, sdd-034d
+
+## Test an agent-supervisor worker with a fake subprocess + a publisher seam, not a mock harness
+
+- **Context:** SDD-034d worker drives `pi` over a stdout JSONL stream and emits telemetry on NATS. The risky parts are process spawning, pipe draining, exit codes, and the event→envelope mapping — not the transport.
+- **Problem:** mocking at the `os/exec` boundary tests a fiction (the contract is a real subprocess + byte stream), and importing a real NATS broker into unit tests is slow and flaky. But the agent loop needs tokens/network if driven by real pi.
+- **Solution:** two seams. (1) A compiled **fake-pi** (`testdata/fakepi`, ignored by `go build ./...`) replays canonical pi JSONL fixtures with knobs for exit code (`FAKEPI_EXIT`) and hang-on-SIGTERM (`FAKEPI_HANG`) — so the driver, worktree, activity mapping, failure path, and ctx-cancel reap are all unit-tested with zero tokens/network. (2) A narrow `Publisher` interface quarantines `nats.go` to one file (`natsbus.go`); the whole job lifecycle is tested against a fake bus that captures envelopes, and the real NATS roundtrip is covered once by the smoke-test. Pyramid: hermetic units + one e2e, no testing theatre.
+- **Tags:** testing, fake-subprocess, seam, nats, hermetic, worker, sdd-034d
