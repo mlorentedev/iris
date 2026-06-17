@@ -34,3 +34,5 @@ coverage.html
 .vscode/
 *.swp
 .DS_Store
+
+refs/

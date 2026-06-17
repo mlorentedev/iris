@@ -32,6 +32,7 @@ VERSION     ?= 0.1.0-dev
 GIT_SHA     := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE  := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 IMAGE_LOCAL ?= iris:dev
+IMAGE_WORKER ?= iris-worker:dev
 REGISTRIES  ?= ghcr.io/mlorentedev/iris docker.io/mlorentedev/iris
 
 .DEFAULT_GOAL := help
@@ -100,6 +101,16 @@ docker-build: ## Build the image, tagging $(IMAGE_LOCAL) + <registry>:{sha,versi
 		--build-arg BUILD_DATE=$(BUILD_DATE) \
 		-t $(IMAGE_LOCAL) \
 		$(foreach r,$(REGISTRIES),-t $(r):$(GIT_SHA) -t $(r):$(VERSION)) \
+		.
+
+.PHONY: worker-build
+worker-build: ## Build the fleet worker image (Go supervisor + Node base + pinned pi, per ADR-009)
+	docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_SHA=$(GIT_SHA) \
+		--build-arg BUILD_DATE=$(BUILD_DATE) \
+		-t $(IMAGE_WORKER) \
+		-f build/worker/Dockerfile \
 		.
 
 .PHONY: docker-push

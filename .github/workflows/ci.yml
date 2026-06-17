@@ -173,3 +173,23 @@ jobs:
         run: |
           docker run --rm iris:dev /motor --version \
             | grep -qE '^iris 0\.1\.0-dev \(sha=[a-f0-9]{7,} built=[0-9-]{10}T'
+
+  # SDD-034d: the fleet worker image must build (multi-stage Go -> Node + pinned
+  # pi, per ADR-009 -- not distroless) and embed its version triplet.
+  worker-docker-build:
+    runs-on: >-
+      ${{ github.event.pull_request.head.repo.fork
+          && 'ubuntu-latest'
+          || fromJSON(vars.RUNNER_DOCKER || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build worker image
+        run: make worker-build
+      - name: Assert version triplet is embedded
+        # iris-worker:dev matches the Makefile IMAGE_WORKER default; ENTRYPOINT is
+        # the worker binary, so args are passed straight through.
+        run: |
+          docker run --rm iris-worker:dev --version \
+            | grep -qE '^iris-worker 0\.1\.0-dev \(sha=[a-f0-9]{7,} built=[0-9-]{10}T'
