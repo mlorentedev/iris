@@ -18,22 +18,31 @@ services:
       retries: 15
       start_period: 1s
 
-  worker-pi-stub:
-    # Placeholder for the pi worker (the real worker lands in SDD-034d). For the
-    # bootstrap it only has to be a running container so the smoke-test substrate
-    # check (worker present) passes. It waits for NATS to be healthy first.
-    image: alpine:3.20
-    command:
-      - sh
-      - -c
-      - |
-        echo "worker-pi-stub up (real worker: SDD-034d)"
-        exec tail -f /dev/null
+  worker-pi:
+    # The real fleet worker (SDD-034d): a Go supervisor driving pi. It connects
+    # to NATS, validates its container (container_validation), and subscribes to
+    # team.<team>.worker.<name>, idling until a user_message arrives. It waits for
+    # NATS to be healthy first.
+    # Named image so a local `make worker-build` is reused by `up` instead of
+    # rebuilt; on a fresh runner (CI) `up` builds it under this tag.
+    image: iris-worker:dev
+    build:
+      context: .
+      dockerfile: build/worker/Dockerfile
+    environment:
+      NATS_URL: nats://nats:4222
+      TEAM: dev
+      WORKER_NAME: worker-1
+      # Inference provider env (pi-ai, OpenAI-compatible) rides through to pi at
+      # job time. Left unset here: the substrate/smoke-test never runs a real job
+      # (no tokens in CI); a real coding loop sets these. NEVER ANTHROPIC_API_KEY.
     depends_on:
       nats:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "true"]
+      # Binary-present liveness; true readiness is the container_validation event.
+      test: ["CMD", "worker", "--version"]
       interval: 10s
-      timeout: 2s
+      timeout: 3s
       retries: 3
+      start_period: 2s

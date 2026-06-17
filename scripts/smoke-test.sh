@@ -33,11 +33,11 @@ curl -fsS "$MOTOR_URL/readyz" 2>/dev/null | grep -q '"db":"ok"' \
 nats --server "$NATS_URL" server check connection >/dev/null 2>&1 \
   || fail 3 "NATS not reachable on $NATS_URL" "is the nats container healthy? '${COMPOSE[*]} ps'"
 
-# 4. Worker pi container running.
-cid="$("${COMPOSE[@]}" ps -q worker-pi-stub 2>/dev/null)"
+# 4. Worker pi container running (the real SDD-034d worker, not a stub).
+cid="$("${COMPOSE[@]}" ps -q worker-pi 2>/dev/null)"
 status="$([ -n "$cid" ] && docker inspect --format '{{.State.Status}}' "$cid" 2>/dev/null)"
 [ "$status" = "running" ] \
-  || fail 4 "worker-pi-stub not running (status=${status:-absent})" "'${COMPOSE[*]} up -d worker-pi-stub'"
+  || fail 4 "worker-pi not running (status=${status:-absent})" "'${COMPOSE[*]} up -d worker-pi'"
 
 # 5. End-to-end NATS pub/sub roundtrip. The subscriber must be listening before
 #    the publish (core NATS is fire-and-forget), so we background the sub first.

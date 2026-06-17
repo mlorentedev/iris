@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sdd-034d-f1-protocol-roundtrip",
+    "behavior": "AC1 — a user_message envelope published to team.<team>.worker.<name> is decoded via the shared internal/protocol package (no Pydantic mirror) and dispatched to the worker.",
+    "verification": "go test ./internal/worker/ -run TestDispatch -count=1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034d-f2-pi-in-worktree",
+    "behavior": "AC2 — the worker spawns `pi --mode json` with cwd=an isolated git worktree and a prompt from the envelope, consumes its JSONL event stream to agent_end, and removes the worktree on completion (item C, no leaked worktrees). Verified against fake-pi (no real inference).",
+    "verification": "go test ./internal/worker/ -run 'TestDriver|TestWorktree' -count=1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034d-f3-activity-emission",
+    "behavior": "AC3 — one activity_event on team.<team>.activity per pi tool_execution_* event, and a container_validation envelope on startup; a test subscriber asserts the envelopes decode via internal/protocol.",
+    "verification": "go test ./internal/worker/ -run 'TestActivity|TestContainerValidation' -count=1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034d-f4-graceful-shutdown",
+    "behavior": "AC4 (item A) — on SIGTERM the worker terminates the in-flight pi subprocess and drains within a bounded timeout; the pi child is reaped (no orphaned pi process).",
+    "verification": "go test ./internal/worker/ -run TestGracefulShutdown -count=1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034d-f5-failure-surfaced",
+    "behavior": "AC5 (item B) — when pi exits non-zero or crashes, the worker emits a failure activity_event rather than dropping it silently (fake-pi exits 1 -> failure envelope asserted).",
+    "verification": "go test ./internal/worker/ -run TestFailure -count=1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "sdd-034d-f6-smoke-test-green",
+    "behavior": "AC6 — the umbrella smoke-test checks #4 (real worker-pi running) and #5 (NATS pub/sub roundtrip) pass with the real worker binary built into compose.dev.yml.",
+    "verification": "docker compose -f compose.dev.yml up -d --wait && go build -o ./tmp/motor ./cmd/motor && (./tmp/motor & for _ in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null 2>&1 && break; sleep 1; done; make smoke-test); kill %1 2>/dev/null; docker compose -f compose.dev.yml down",
+    "state": "pending",
+    "evidence": ""
+  }
+]

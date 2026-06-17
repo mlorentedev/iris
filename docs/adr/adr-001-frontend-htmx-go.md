@@ -93,9 +93,9 @@ Every client deployment Manu supports is a unit of consultoría margin. Operatio
 
 Performance was mentioned in the conversation as the deciding factor; this ADR corrects that framing for the record. HTMX's performance characteristics (server-rendered HTML, minimal payload, no hydration) are excellent but they are not why the choice is correct. The choice is correct because of wedge alignment, ops simplicity, and structural bug avoidance. Tailwind under HTMX produces aesthetically identical UIs to Tailwind under React — the visual outcome is the same. The architectural outcome is what differs.
 
-### 5. Coherent stack — Go motor + Go templates + Python workers
+### 5. Coherent stack — Go motor + Go templates + Go fleet workers
 
-iris's existing decision (Go motor + Python workers) is polyglot but bounded. Adding Go templates for the UI keeps the boundary tight: workers are isolated, frontend is in-process with backend. The maintenance surface is two languages, not three.
+iris's worker is also Go (ADR-009: the worker is a thin pi-supervisor, pi being a TypeScript subprocess dependency), which *strengthens* this argument rather than weakening it: motor, templates, and workers share one language and one toolchain. Adding Go templates for the UI keeps the boundary tight: workers are isolated, frontend is in-process with backend. The maintenance surface is one language for the iris codebase (pi is a pinned external dependency, not source we maintain).
 
 ## The two conditions under which we'd switch to Astro
 
@@ -151,7 +151,7 @@ When implementing the console:
 **Positive:**
 - Single-binary deploy preserved. Wedge messaging stays true.
 - Whole class of state-drift bugs (the kind `agent_crew` is fighting) becomes structurally impossible.
-- One language across motor + templates (Python workers remain isolated). Maintenance surface minimised.
+- One language across motor + templates + fleet workers (ADR-009). Maintenance surface minimised.
 - Build pipeline: `go build` produces the entire iris including UI. CI/CD trivial.
 - Offline / air-gapped client deployments work without ceremony (vendor HTMX + tailwindcss binary).
 
