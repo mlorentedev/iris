@@ -48,7 +48,10 @@ func (d *Driver) Run(ctx context.Context, prompt string, handle func(Event)) (Re
 	args := append([]string{"--mode", "json"}, d.Args...)
 	args = append(args, prompt)
 
-	cmd := exec.CommandContext(ctx, bin, args...)
+	// G204: the pi binary and its flags come from the worker's own config, not
+	// from message data, and run as argv (no shell) — driving a configured
+	// subprocess is this type's entire job.
+	cmd := exec.CommandContext(ctx, bin, args...) //nolint:gosec
 	cmd.Dir = d.Dir
 	cmd.Env = d.Env
 

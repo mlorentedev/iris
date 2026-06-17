@@ -18,7 +18,7 @@ import (
 func buildFakePI(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "fakepi")
-	cmd := exec.Command("go", "build", "-o", bin, "./testdata/fakepi")
+	cmd := exec.Command("go", "build", "-o", bin, "./testdata/fakepi") //nolint:gosec // G204: fixed `go build` of the in-repo test stand-in
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("build fakepi: %v", err)
