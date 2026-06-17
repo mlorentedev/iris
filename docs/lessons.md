@@ -31,3 +31,10 @@
 - **Problem:** `go get sigs.k8s.io/agent-sandbox@latest` resolved the published release **v0.4.6**, but `go mod tidy` then failed with `module ... found (v0.4.6), but does not contain package sigs.k8s.io/agent-sandbox/api/v1beta1`. The released tag still ships the **old `v1alpha1`** API; `main` had already migrated the types to **`v1beta1`** with no intermediate release. The upstream docs (and context7) also still described `v1alpha1` — only the cloned source showed `api/v1beta1` with group `agents.x-k8s.io`.
 - **Solution:** pin to `sigs.k8s.io/agent-sandbox@main` (pseudo-version `v0.4.7-0.<ts>-<sha>`) so the `v1beta1` types resolve. agent-sandbox is pre-1.0 and fast-moving: verify the API group/version from the actual cloned source, not the docs, and re-pin to a real tag once one ships `v1beta1`. The entire dependency is isolated to `internal/runtime/k8s` (ADR-005 / OQ-1), so the re-pin is a one-package change.
 - **Tags:** go-modules, agent-sandbox, kubernetes, api-versioning, pre-1.0, dependency-pinning
+
+## pi is npm-only — the Go worker image is a Node base, not distroless
+
+- **Context:** SDD-034d picks Go for the fleet worker (ADR-009), partly for the motor's "static distroless binary" deploy story. The worker drives `pi` (earendil-works/pi) as a subprocess.
+- **Problem:** pi ships **only via npm** (`npm i -g --ignore-scripts @earendil-works/pi-coding-agent`) — there is **no standalone/compiled binary** (no bun/deno-compile/pkg). So a `distroless/static:nonroot` worker image cannot run pi: it has no Node. The "static binary" advantage cited for Go does **not** carry to the worker's runtime image.
+- **Solution:** the worker image is multi-stage Go-build → **Node base** with pi installed `--ignore-scripts` and **version-pinned**, plus the Go binary copied in. pi upgrades are dependency bumps (pin + test). This Node requirement is identical for any worker language, so it does not change the Go-vs-Python decision — it only means the worker image differs from the motor's distroless image. Recorded in ADR-009; relevant to SDD-034g (deploy).
+- **Tags:** pi, npm, docker-image, distroless, node, worker, sdd-034d
