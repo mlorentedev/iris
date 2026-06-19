@@ -45,3 +45,24 @@
 - **Problem:** mocking at the `os/exec` boundary tests a fiction (the contract is a real subprocess + byte stream), and importing a real NATS broker into unit tests is slow and flaky. But the agent loop needs tokens/network if driven by real pi.
 - **Solution:** two seams. (1) A compiled **fake-pi** (`testdata/fakepi`, ignored by `go build ./...`) replays canonical pi JSONL fixtures with knobs for exit code (`FAKEPI_EXIT`) and hang-on-SIGTERM (`FAKEPI_HANG`) — so the driver, worktree, activity mapping, failure path, and ctx-cancel reap are all unit-tested with zero tokens/network. (2) A narrow `Publisher` interface quarantines `nats.go` to one file (`natsbus.go`); the whole job lifecycle is tested against a fake bus that captures envelopes, and the real NATS roundtrip is covered once by the smoke-test. Pyramid: hermetic units + one e2e, no testing theatre.
 - **Tags:** testing, fake-subprocess, seam, nats, hermetic, worker, sdd-034d
+
+## `go get` must run in the foreground before `go mod tidy`
+
+- **Context:** SDD-034d — adding `github.com/nats-io/nats.go` as the first NATS client dependency.
+- **Problem:** `go get nats.go@latest` was launched as a background task. The subsequent `go mod tidy` ran while the background write was either in-flight or not yet flushed, stripping the dependency. The next build failed with "no required module provides package github.com/nats-io/nats.go" despite the backgrounded get reporting success.
+- **Solution:** always run `go get <pkg>` in the foreground, verify it appears in `go.mod`, *then* run `go mod tidy`. Never background Go module mutation commands.
+- **Tags:** go-modules, gotcha, backgrounded-tasks, nats, sdd-034d
+
+## gosec G204 on subprocess calls — validate input, funnel through one helper, annotate once
+
+- **Context:** SDD-034d `internal/worker/worktree.go` runs `git worktree add/remove` and `git branch -D` with internally-derived paths and branch names. golangci-lint (v2, gosec enabled) flagged every `exec.CommandContext` call as G204 ("subprocess launched with variable").
+- **Problem:** blanket `//nolint:gosec` per call site is noise and masks the real security concern (unsanitized external input reaching shell commands). gosec v2 is stricter than v1 and will flag these even when the binary is a literal string, if arguments contain non-literal variables.
+- **Solution:** (1) validate the input source with a strict allowlist regex (`jobIDRE ^[A-Za-z0-9][A-Za-z0-9-]{0,127}$`) that rejects path-traversal chars and git ref separators *before* any path or branch string is constructed; (2) funnel all `git` invocations through a single `runGit()` helper (fixed binary, validated argv, no shell); (3) place exactly ONE `//nolint:gosec // G204: fixed binary + validated argv, no shell` on the exec call inside that helper. The fix addresses the underlying concern rather than just silencing the linter.
+- **Tags:** gosec, golangci-lint, G204, subprocess, security, go, sdd-034d
+
+## golangci-lint v1/v2 version skew causes CI-only lint failures
+
+- **Context:** SDD-034d — `make install-tools` does not pin the golangci-lint version. Local environment had v1.62.2; CI (`.github/workflows/ci.yml`) installs v2.12.2.
+- **Problem:** gosec checks that v2 flags (e.g. G204 on `exec.CommandContext` with variable args) are silently skipped by v1. Code that passes lint locally can fail CI without any local signal. The skew is invisible unless you check `golangci-lint --version` explicitly.
+- **Solution:** install the CI-matching version locally with `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2` before pushing. Long-term: pin the version in `make install-tools` or use the golangci-lint GitHub Action's `version:` pin so local and CI always match.
+- **Tags:** golangci-lint, ci, version-skew, gosec, tooling, sdd-034d
