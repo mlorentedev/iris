@@ -30,6 +30,17 @@ repos:
           echo "  -> non-ASCII above in $f"; rc=1; fi; done;
           test $rc -eq 0 || echo "FIX: replace multi-byte chars (em-dash, section sign) with ASCII"; exit $rc' --
 
+  # Lessons numbering and index integrity (scripts/check-lessons.sh, also run in CI
+  # by .github/workflows/repo-hygiene.yml).
+  - repo: local
+    hooks:
+      - id: check-lessons
+        name: lessons numbering and index integrity
+        language: script
+        entry: scripts/check-lessons.sh
+        pass_filenames: false
+        files: ^docs/lessons/
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
