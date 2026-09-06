@@ -1,13 +1,13 @@
 ---
 id: adr-011-goal-lifecycle-crd-vs-postgres
 type: adr
-status: proposed
+status: deferred
 created: "2026-06-18"
 ---
 
 # ADR-011 — Goal lifecycle: Postgres-loop with a controller-runtime-shaped reconciler interface
 
-> **Status:** Proposed, 2026-06-18
+> **Status:** Deferred, 2026-09-06 (proposed 2026-06-18). Deferred 2026-09-06, no implementation started; revisit under iris#29.
 > **Supersedes:** —
 > **Refines:** [adr-002-orchestrator-architecture](./adr-002-orchestrator-architecture.md) (§"Scheduler" component, deferred in the "What's NOT decided" table), [adr-007-iris-v0-coding-loop](./adr-007-iris-v0-coding-loop.md) (§"The loop" — issue → dispatch → pi → gate → sign-off lifecycle)
 > **Tracking:** mlorentedev/iris#29
