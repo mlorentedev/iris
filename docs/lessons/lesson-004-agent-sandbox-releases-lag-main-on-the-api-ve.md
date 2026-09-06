@@ -2,7 +2,7 @@
 id: lesson-004-agent-sandbox-releases-lag-main-on-the-api-ve
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]
 ---

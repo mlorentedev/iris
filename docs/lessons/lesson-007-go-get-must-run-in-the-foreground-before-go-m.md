@@ -2,7 +2,7 @@
 id: lesson-007-go-get-must-run-in-the-foreground-before-go-m
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-19"
 owner: manu
 tags: [iris, lesson]
 ---
