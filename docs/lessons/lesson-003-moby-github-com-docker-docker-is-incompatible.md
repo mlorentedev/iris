@@ -2,7 +2,7 @@
 id: lesson-003-moby-github-com-docker-docker-is-incompatible
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]
 ---

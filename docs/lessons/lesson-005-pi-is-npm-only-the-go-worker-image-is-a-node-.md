@@ -2,7 +2,7 @@
 id: lesson-005-pi-is-npm-only-the-go-worker-image-is-a-node-
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-17"
 owner: manu
 tags: [iris, lesson]
 ---

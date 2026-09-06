@@ -2,7 +2,7 @@
 id: lesson-002-imagepull-always-contacts-the-registry-gate-o
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]
 ---

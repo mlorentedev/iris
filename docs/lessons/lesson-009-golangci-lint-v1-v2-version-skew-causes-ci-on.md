@@ -2,7 +2,7 @@
 id: lesson-009-golangci-lint-v1-v2-version-skew-causes-ci-on
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-19"
 owner: manu
 tags: [iris, lesson]
 ---
