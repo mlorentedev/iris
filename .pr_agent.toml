@@ -1,0 +1,135 @@
+# PR-Agent (The-PR-Agent/pr-agent, MIT) on NaN cluster inference.
+#
+# Why this repo carries a second reviewer, measured rather than assumed (2026-09-06,
+# the 12 most recent PRs, #21..#44):
+#
+#   real CodeRabbit review (`## Walkthrough`)   11 of 11 non-dependabot PRs
+#   quota decline (`Review limit reached`)       0
+#   `Review skipped`                             0
+#   no reviewer output                           1 (#35, dependabot)
+#
+# So iris has no measured review gap today. What it shares with the repos that do is
+# the plan: CodeRabbit's quota is account-wide, ts-bridge measured a 59 % decline rate
+# on it the week before, and CodeRabbit is not a check-run here (the rollup on #44 was
+# the CI jobs only), so the day the quota runs out nothing in this repo would say so.
+# This is the reviewer whose capacity is ours rather than a vendor's, added before the
+# gap appears instead of after.
+#
+# Ported from mlorentedev/ts-bridge (#315), itself from mlorentedev/dotfiles
+# (`.pr_agent.toml`, TOOL-013 #786) via the mlorentedev/kubelab adaptation (TOOL-021
+# #1140). Numbers, paths and the ignore list below are re-derived for this repo; the
+# model-chain reasoning is inherited and cited by issue so it can be checked at source.
+
+[config]
+# `openai/` selects LiteLLM's OpenAI-compatible transport; the endpoint is NaN's, set
+# as OPENAI__API_BASE in the workflow. Nothing here talks to OpenAI.
+#
+# mimo-v2.5 leads and deepseek-v4-flash follows because the order is the only one that
+# can fail loudly. deepseek's characteristic failure is a 200 with an empty body — it
+# spends the output budget on the reasoning chain and never writes an answer — which
+# raises no exception, so LiteLLM never consults a fallback behind it. kubelab measured
+# that shape on run 32440498259 (#1205): step `success` after 4m15s, no RateLimitError,
+# the second model never attempted. mimo fails by saturation (429), which DOES raise.
+#
+# This is not a quality ranking. harness/reviewer-pool.json says of mimo, in its own
+# words, that no ranking against deepseek was established; both are reasoning-class by
+# profile (1M context, mandatory chain) and both are admitted there, which is the line
+# this file draws. The excluded models stay excluded by name: qwen3.6/gemma4 are the
+# latency tier, and a reviewer that PASSes cheaply converts a gate into a green
+# checkmark. tests/pr-agent-config.bats holds that at dotfiles.
+model = "openai/mimo-v2.5"
+
+# ONE fallback, and lane separation is why it is deepseek rather than a sibling of the
+# primary. NaN's limit is PER MODEL (kubelab #1107/#1203: 8 concurrent to deepseek
+# gives 5x200 + 3x429 while mimo answers 200 during the same saturation), so the second
+# bucket is a real fallback and not a re-name of the same wall. It does share a bucket
+# with this repo's adversarial-review pool, where deepseek is a member — the trade was
+# made at dotfiles #1149 in the same direction (CI yields to the gate, because the gate
+# blocks and CI review advises), and it is recorded here rather than rediscovered.
+fallback_models = ["openai/deepseek-v4-flash"]
+
+# `model_weak` deliberately absent. Upstream defaults it to a flash tier for
+# descriptions and commit summaries; `auto_describe` is off below so it would do
+# nothing, and the model it names is the one the pool rejects here. Importing a
+# documented tension for zero behaviour is the worst of both.
+
+# NaN ids are not in LiteLLM's registry, so the budget must be stated or LiteLLM
+# assumes a small default and truncates the diff silently.
+custom_model_max_tokens = 200000
+max_model_tokens = 200000
+
+response_language = "en-US"
+
+# `AGENTS.md` is the only context file that exists here. No root `CLAUDE.md` and no
+# `.claude/CLAUDE.md` (both checked 2026-09-06), so naming either would hand the
+# reviewer a source it cannot read — a rule that looks like rigour and asserts nothing.
+repo_context_files = ["AGENTS.md"]
+
+[pr_reviewer]
+require_score_review = false
+require_tests_review = true
+require_security_review = true
+persistent_comment = true
+final_update_message = false
+
+# No "compliance sweep" preamble: asked for on every review and delivered once in
+# sixteen at dotfiles (#1072, recommendation was deletion). An instruction ignored 94 %
+# of the time is a comment, not a control.
+extra_instructions = """
+This repository already runs pre-commit (gitleaks, SPDX headers, SQL ASCII guard),
+golangci-lint v2 (pinned in CI), go vet, `go test -race`, the sqlc and OpenAPI drift
+checks, the BATS smoke test and a Docker build. Do not restate what those report;
+repeating it is noise that trains the reader to skim.
+
+Spend the budget on what static analysis cannot see:
+
+- a test that passes vacuously: an assertion against a fake that cannot reach the
+  production wiring it claims to check. The worker is tested with a fake subprocess and
+  a publisher seam (docs/lessons/lesson-006); a finding that the seam hides a real
+  path is worth more than a style note.
+- a guard that cannot fail the way its comment claims, or that perturbs the thing it
+  measures.
+- NATS subject and envelope drift: the protocol package defines the subject taxonomy
+  and message types (ADR-007, SDD-034b); a publisher and a subscriber that agree on a
+  subject string only by copy-paste is the class to flag.
+- subprocess and container boundaries: pi is driven as a subprocess and runs inside
+  Docker or Kubernetes sandboxes (ADR-009, lesson-001, lesson-008). Argument
+  construction, PID 1 signal handling and gosec G204 annotations are where review
+  earns its keep.
+- cross-file consequences a single-hunk reader misses: a claim repeated in README,
+  `docs/adr/`, `docs/lessons/` and AGENTS.md where only one of them is edited, or a
+  documented flag that the binary rejects.
+- anything that puts a credential in a transcript, a log line, an argv or the process
+  table, including in documentation examples. Provider keys must never reach a worker
+  process environment (ADR-010).
+
+Grade each finding REAL, THEORETICAL or SPECULATIVE and say which. REAL needs a concrete
+trace: file and line, failing input, or a command and its output. Do not flag an import
+or dependency as missing when CI compiles and tests pass; trust the manifests. Write in
+English. Conventional Commits and no AI attribution are enforced here, so do not propose
+commit messages that carry either.
+"""
+
+[pr_code_suggestions]
+# Present on purpose. Omitting this block is how upstream shipped the tool with its
+# stated function disabled: the default `dual_publishing_score_threshold` is -1, which
+# never publishes inline (dotfiles measured 2 bot comments and 0 inline across three
+# PRs before noticing). 7 is upstream's own medium boundary.
+dual_publishing_score_threshold = 7
+suggestions_score_threshold = 5
+publish_output_no_suggestions = false
+
+[ignore]
+# Applied BEFORE the model call. This repo keeps no credential material in-tree (no
+# SOPS/age store, no keys — the only secrets live in GitHub's own stores), so this list
+# is about spend and signal, not leakage:
+#   - sqlc output is generated and covered by the CI drift check; re-reviewing it
+#     spends inference on code nobody wrote by hand;
+#   - archived specs are a closed audit trail, re-reviewing them spends inference on
+#     text that has already been reviewed once.
+glob = [
+  "internal/db/sqlc/**",
+  "specs/archive/**",
+  "**/*.log",
+  "coverage.out",
+]
