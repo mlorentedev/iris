@@ -2,7 +2,7 @@
 id: lesson-008-gosec-g204-on-subprocess-calls-validate-input
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-19"
 owner: manu
 tags: [iris, lesson]
 ---

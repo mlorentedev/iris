@@ -2,7 +2,7 @@
 id: lesson-006-test-an-agent-supervisor-worker-with-a-fake-s
 type: lesson
 status: active
-created: "2026-05-01"
+created: "2026-06-17"
 owner: manu
 tags: [iris, lesson]
 ---
