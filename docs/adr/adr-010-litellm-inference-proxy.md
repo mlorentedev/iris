@@ -1,13 +1,13 @@
 ---
 id: adr-010-litellm-inference-proxy
 type: adr
-status: proposed
+status: deferred
 created: "2026-06-18"
 ---
 
 # ADR-010 — LiteLLM as the iris inference proxy
 
-> **Status:** Proposed, 2026-06-18
+> **Status:** Deferred, 2026-09-06 (proposed 2026-06-18). Deferred 2026-09-06, no implementation started; revisit under iris#29.
 > **Supersedes:** SDD-034i (iris#13) — the inference-proxy seam that ADR-007 placed and deferred
 > **Refines:** [adr-007-iris-v0-coding-loop](./adr-007-iris-v0-coding-loop.md) (§"Runtime × Inference axes"), [adr-005-architectural-boundary](./adr-005-architectural-boundary.md) (§"iris EDGE" — LiteLLM already listed as adopted substrate)
 > **Tracking:** mlorentedev/iris#29 · mlorentedev/iris#32 (SEC-001 / IRIS-SEC-2)

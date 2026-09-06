@@ -1,7 +1,7 @@
 ---
 id: adr-007-iris-v0-coding-loop
 type: adr
-status: active
+status: accepted
 created: "2026-06-13"
 ---
 
