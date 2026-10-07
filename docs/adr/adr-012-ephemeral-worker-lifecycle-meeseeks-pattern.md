@@ -29,7 +29,7 @@ We establish the **Meeseeks Pattern** as the canonical execution and lifecycle m
 
 ### 1. Ephemeral Worker Lifecycle
 
-Every fleet worker invocation follows a strict 4-phase lifecycle:
+Every fleet worker invocation follows a strict 5-phase lifecycle (phase 4 only runs when review asks for changes):
 
 1. **Spawn (Birth):** Upon claiming a Goal/Issue from NATS (or local CLI trigger), the motor provisions an isolated git worktree at `../wt-<worker-id>` on branch `iris/<worker-id>`. The worker receives a semantic codename and boots clean.
 2. **Context Ingestion:** The worker does not retain long-term state. Instead, it queries the `hive-vault` MCP server (`vault_query`) for project context (~50 lines) and relevant patterns.
