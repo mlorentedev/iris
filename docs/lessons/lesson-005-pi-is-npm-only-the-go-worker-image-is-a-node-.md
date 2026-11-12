@@ -1,7 +1,8 @@
 ---
-id: lesson-005-pi-is-npm-only-the-go-worker-image-is-a-node-
+id: "lesson-005-pi-is-npm-only-the-go-worker-image-is-a-node-"
 type: lesson
 status: active
+title: "pi is npm-only — the Go worker image is a Node base, not distroless"
 created: "2026-06-17"
 owner: manu
 tags: [iris, lesson]

@@ -1,7 +1,8 @@
 ---
-id: lesson-006-test-an-agent-supervisor-worker-with-a-fake-s
+id: "lesson-006-test-an-agent-supervisor-worker-with-a-fake-s"
 type: lesson
 status: active
+title: "Test an agent-supervisor worker with a fake subprocess + a publisher seam, not a mock harness"
 created: "2026-06-17"
 owner: manu
 tags: [iris, lesson]

@@ -1,7 +1,8 @@
 ---
-id: lesson-004-agent-sandbox-releases-lag-main-on-the-api-ve
+id: "lesson-004-agent-sandbox-releases-lag-main-on-the-api-ve"
 type: lesson
 status: active
+title: "agent-sandbox releases lag `main` on the API version — pin to `@main`, verify from source"
 created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]

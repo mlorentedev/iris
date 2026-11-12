@@ -1,7 +1,8 @@
 ---
-id: lesson-008-gosec-g204-on-subprocess-calls-validate-input
+id: "lesson-008-gosec-g204-on-subprocess-calls-validate-input"
 type: lesson
 status: active
+title: "gosec G204 on subprocess calls — validate input, funnel through one helper, annotate once"
 created: "2026-06-19"
 owner: manu
 tags: [iris, lesson]
