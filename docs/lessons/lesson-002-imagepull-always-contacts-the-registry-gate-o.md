@@ -1,7 +1,8 @@
 ---
-id: lesson-002-imagepull-always-contacts-the-registry-gate-o
+id: "lesson-002-imagepull-always-contacts-the-registry-gate-o"
 type: lesson
 status: active
+title: "`ImagePull` always contacts the registry — gate on local presence"
 created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]

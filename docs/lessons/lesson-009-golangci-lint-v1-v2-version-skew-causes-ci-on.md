@@ -1,7 +1,8 @@
 ---
-id: lesson-009-golangci-lint-v1-v2-version-skew-causes-ci-on
+id: "lesson-009-golangci-lint-v1-v2-version-skew-causes-ci-on"
 type: lesson
 status: active
+title: "golangci-lint v1/v2 version skew causes CI-only lint failures"
 created: "2026-06-19"
 owner: manu
 tags: [iris, lesson]

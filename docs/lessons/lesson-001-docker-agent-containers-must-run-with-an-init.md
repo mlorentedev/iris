@@ -1,7 +1,8 @@
 ---
-id: lesson-001-docker-agent-containers-must-run-with-an-init
+id: "lesson-001-docker-agent-containers-must-run-with-an-init"
 type: lesson
 status: active
+title: "Docker agent containers must run with an init (PID 1 signal handling)"
 created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]

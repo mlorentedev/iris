@@ -1,7 +1,8 @@
 ---
-id: lesson-003-moby-github-com-docker-docker-is-incompatible
+id: "lesson-003-moby-github-com-docker-docker-is-incompatible"
 type: lesson
 status: active
+title: "moby `github.com/docker/docker` is `+incompatible` — pin `go-connections`"
 created: "2026-06-16"
 owner: manu
 tags: [iris, lesson]
