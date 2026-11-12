@@ -61,7 +61,8 @@
       "login": "github-actions",
       "declined_markers": [],
       "review_markers": [
-        "## PR Reviewer Guide"
+        "## PR Reviewer Guide",
+        "## Incremental PR Reviewer Guide"
       ],
       "why": "PR-Agent (see .github/workflows/pr-agent.yml) runs under GITHUB_TOKEN and publishes through the COMMENTS api, so its reviews never enter reviews[] and a classifier that looked only at reviews would read every PR-Agent-reviewed PR as unattested. The marker is the `review` command's own heading. `## PR Code Suggestions` is deliberately NOT here — suggestions are not a review, which is also why auto_improve is off on the automatic path. MARKER PROVENANCE: verified in the sibling ports before being declared here — kubelab has 215 PR comments carrying '## PR Reviewer Guide' posted by github-actions[bot] and dotfiles has 172 (counted at ts-bridge #315). It has NEVER been observed in iris, because this workflow has not run here and NAN_API_KEY is not yet set in this repository: the first green run of pr-agent on an iris PR is the verification, and until then this entry is a declaration of intent, not of an actor."
     }
@@ -74,5 +75,17 @@
     "label": "merged-unreviewed",
     "section": "## Unreviewed merge rationale",
     "why": "Both are required, never one. Proceeding on an unreviewed PR is allowed; proceeding SILENTLY is not. The label plus the section is what forces the disclosure into the durable record instead of a chat message."
+  },
+  "classification": {
+    "prefix": "Class: ",
+    "classes": [
+      "REAL",
+      "THEORETICAL",
+      "SPECULATIVE"
+    ],
+    "reviewers": [
+      "github-actions"
+    ],
+    "why": "A finding's class is read from a whole line equal to prefix + class, never parsed out of prose; a finding with no such line, or two that disagree, is unclassified and goes to a human. .pr_agent.toml asks the reviewer for exactly these lines in extra_instructions, with the paragraph shared by every repository that calls the ci-workflows pr-agent workflow. reviewers names PR-Agent (github-actions) only, because CodeRabbit writes its own severity format. Shape copied from dotfiles (TOOL-017)."
   }
 }
