@@ -7,7 +7,7 @@
 # package manager, non-root by default. modernc SQLite is pure-Go, so the binary
 # needs no libc and CGO stays disabled.
 
-FROM golang:1.26-alpine AS build
+FROM golang:1.27-alpine AS build
 WORKDIR /src
 
 # Download modules in their own layer so source edits don't bust the cache.
